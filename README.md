@@ -58,11 +58,13 @@ Advice is shown only for open ports, and only where a primary source backs it:
 |---|---|---|
 | 21 FTP | Sends passwords unencrypted; use SFTP/FTPS | [RFC 2577](https://www.rfc-editor.org/rfc/rfc2577) sections 5-6 |
 | 23 Telnet | Far weaker than SSH; use SSH | [RFC 4251](https://www.rfc-editor.org/rfc/rfc4251) section 4.1 |
+| 135 MS-RPC, 139 NetBIOS, 593 RPC over HTTP | Block inbound from the internet | [MS03-026](https://learn.microsoft.com/en-us/security-updates/securitybulletins/2003/ms03-026) Technical details |
 | 445 SMB | Block inbound from the internet; disable SMBv1 | [Secure SMB Traffic](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic), [SMBv1](https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/detect-enable-and-disable-smbv1-v2-v3) |
 | 3306 MySQL | Not reachable from untrusted hosts | [MySQL 8.4 Security Guidelines](https://dev.mysql.com/doc/refman/8.4/en/security-guidelines.html) |
+| 3389 RDP | Do not expose directly to the internet | [Troubleshoot RDP blocked by NSG rules](https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows/troubleshoot-rdp-nsg-problem), "Secure RDP access for production environments" |
 | 5900 VNC | Built-in auth is weak; tunnel over SSH/VPN | [RFC 6143](https://www.rfc-editor.org/rfc/rfc6143) section 7.2.2 |
 
-Other open ports (e.g. 135 RPC, 139 NetBIOS, 3389 RDP) are listed without advice until a primary source is added.
+Other open ports are listed without advice until a primary source is added. To add one, put an entry in `ADVICE` in `pyvenom.py` with the source's title, section, and URL.
 
 ## Tests
 
