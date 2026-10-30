@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Software - PyVenom{% endblock %}
+{% block content %}
+  <p class="sub">Installed software with pending updates (winget), and known CVEs for the installed version of common apps (NVD).</p>
+
+  <div class="panel">
+    <form method="post" action="/software" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Auditing...';">
+      <input type="hidden" name="token" value="{{ token }}">
+      <label class="check">
+        <input type="checkbox" name="cves" value="1" {{ 'checked' if check_cves }}>
+        Check known CVEs ({{ cve_seconds }})
+      </label>
+      <button type="submit">Audit this PC</button>
+    </form>
+  </div>
+
+  {% if error %}
+  <div class="panel error">{{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+  {% if result.cve_checks %}
+  <div class="panel">
+    <h2>Known CVEs ({{ result.cve_checks | length }} apps checked)</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>App</th><th>Installed</th><th>CVEs</th><th>Fix</th></tr></thead>
+        <tbody>
+        {% for c in result.cve_checks %}
+          {% set kev = c.cves | selectattr('known_exploited') | list | length %}
+          <tr class="{{ 'risky' if c.cves }}">
+            <td>{{ c.name }}</td>
+            <td class="num">{{ c.installed }}</td>
+            <td>{% if c.cves %}{{ c.cves | length }}{% if kev %} <span class="badge">{{ kev }} KNOWN EXPLOITED</span>{% endif %}{% else %}<span class="muted">none</span>{% endif %}</td>
+            <td class="advice">{% if c.cves and c.update_available %}Update to {{ c.update_available }}{% elif c.cves %}No winget update; check the vendor{% endif %}</td>
+          </tr>
+          {% if c.cves %}
+          <tr><td colspan="4">
+            <ul class="sources">
+            {% for x in c.cves[:top] %}
+              <li><a href="{{ x.url }}">{{ x.id }}</a> {{ x.severity or '?' }} {{ x.score or '' }}{% if x.known_exploited %} <span class="badge">KNOWN EXPLOITED</span>{% endif %}</li>
+            {% endfor %}
+            {% if c.cves | length > top %}<li class="muted">{{ c.cves | length - top }} more</li>{% endif %}
+            </ul>
+          </td></tr>
+          {% endif %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <h2>Updates available ({{ result.updates | length }})</h2>
+    {% if result.updates %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>App</th><th>Installed</th><th>Available</th></tr></thead>
+        <tbody>
+        {% for u in result.updates %}
+          <tr><td>{{ u.name }}</td><td class="num">{{ u.installed }}</td><td class="num">{{ u.available }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">Install all with <code>winget upgrade --all</code>.</p>
+    {% else %}
+    <p class="muted">Everything winget manages is up to date.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endblock %}

@@ -60,6 +60,8 @@ python app.py
 
 Open http://127.0.0.1:5000, enter a target and ports, press Scan. Results show in a table with risky ports highlighted and their sources linked. A scan of the default ports takes about 15 seconds.
 
+The **Software** tab runs the [software audit](#software-audit-windows) on this PC. It shows apps with known CVEs, with known-exploited ones flagged, and every pending update. With CVE checks on, it takes about 7 s per curated app installed, or under 1 s each with `NVD_API_KEY` set.
+
 The server listens on `127.0.0.1` only and is not reachable from other devices. Requests with a foreign `Host` header and scans without the page's per-run token are refused, so other websites open in your browser cannot trigger scans.
 
 ## Advice
@@ -111,7 +113,3 @@ Known CVEs for installed versions (NVD, 5 curated apps checked):
       CVE-2026-5402    HIGH     8.8    https://nvd.nist.gov/vuln/detail/CVE-2026-5402
       ...
 ```
-
-## Roadmap
-
-- Software audit in the web UI.

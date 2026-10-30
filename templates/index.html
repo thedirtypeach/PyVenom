@@ -1,52 +1,5 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PyVenom</title>
-<style>
-  :root {
-    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #5d6673; --border: #d9dde3;
-    --accent: #2f6f4f; --accent-text: #ffffff; --warn-bg: #fff4e5; --warn: #8a4b00;
-    --err-bg: #fdecec; --err: #9b1c1c; --open: #2f6f4f; --filtered: #8a6d00;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #111418; --panel: #1a1f25; --text: #e6e9ee; --muted: #9aa4b2; --border: #2c333c;
-      --accent: #4caf7d; --accent-text: #0b0f0c; --warn-bg: #2d2214; --warn: #f0b264;
-      --err-bg: #2e1616; --err: #f19a9a; --open: #6fd09f; --filtered: #e3c35a;
-    }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 960px; margin: 0 auto; padding: 32px 16px; }
-  h1 { margin: 0 0 4px; font-size: 24px; }
-  .sub { margin: 0 0 24px; color: var(--muted); }
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-  form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
-  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); flex: 1 1 200px; }
-  input { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
-  button { font: inherit; font-weight: 600; color: var(--accent-text); background: var(--accent); border: 0; border-radius: 6px; padding: 9px 18px; cursor: pointer; }
-  button:disabled { opacity: .6; cursor: progress; }
-  .error { background: var(--err-bg); color: var(--err); white-space: pre-line; }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .state-open { color: var(--open); font-weight: 600; }
-  .state-filtered { color: var(--filtered); }
-  tr.risky td { background: var(--warn-bg); }
-  tr.risky td.advice { color: var(--warn); }
-  .muted { color: var(--muted); }
-  ul.sources { margin: 0; padding-left: 20px; overflow-wrap: anywhere; }
-  a { color: var(--accent); }
-</style>
-</head>
-<body>
-<main>
-  <h1>PyVenom</h1>
+{% extends "base.html" %}
+{% block content %}
   <p class="sub">Scan a host for open ports and flag the risky ones. Only scan machines you own or have permission to test.</p>
 
   <div class="panel">
@@ -99,6 +52,4 @@
   </div>
   {% endif %}
   {% endif %}
-</main>
-</body>
-</html>
+{% endblock %}
