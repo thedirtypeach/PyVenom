@@ -48,7 +48,21 @@ Sources:
 
 `--json` prints `{"target": ..., "findings": [...]}`; each finding has `host`, `hostname`, `protocol`, `port`, `state`, `service`, `advice`, `source`.
 
-Exit code is 1 when nmap is missing or the target cannot be resolved or reached.
+Exit code is 1 when nmap is missing, the target or ports are invalid, or the target cannot be resolved or reached.
+
+Targets must be a single hostname, IP address, or CIDR range, and ports only digits, commas, and ranges. This keeps input from being passed to nmap as extra options.
+
+## Web UI
+
+```powershell
+python app.py
+```
+
+Open http://127.0.0.1:5000, enter a target and ports, press Scan. Results show in a table with risky ports highlighted and their sources linked. A scan of the default ports takes about 15 seconds.
+
+The **Software** tab runs the [software audit](#software-audit-windows) on this PC. It shows apps with known CVEs, with known-exploited ones flagged, and every pending update. With CVE checks on, it takes about 7 s per curated app installed, or under 1 s each with `NVD_API_KEY` set.
+
+The server listens on `127.0.0.1` only and is not reachable from other devices. Requests with a foreign `Host` header and scans without the page's per-run token are refused, so other websites open in your browser cannot trigger scans.
 
 ## Advice
 
@@ -70,8 +84,32 @@ Other open ports (e.g. 135 RPC, 139 NetBIOS, 3389 RDP) are listed without advice
 python -m unittest
 ```
 
-Tests cover result parsing and the advice table; they do not need nmap or a network.
+Tests cover result parsing, input validation, the advice table, and the web UI (including the token, Host, and escaping checks); they do not need nmap or a network.
 
-## Roadmap
+## Software audit (Windows)
 
-- Inventory installed software and versions on Windows and compare against known-vulnerable versions.
+```powershell
+Install-Module Microsoft.WinGet.Client -Scope CurrentUser    # once
+python software.py              # updates + known CVEs
+python software.py --no-cve     # updates only (a few seconds)
+python software.py --json       # machine-readable output
+```
+
+Two checks:
+
+1. **Updates:** every installed app that winget has a newer version of, via Microsoft's WinGet PowerShell module. `winget upgrade --all` installs them.
+2. **Known CVEs:** for a curated list of common apps, the NVD is asked which CVEs cover the installed version (`cpeName` + `isVulnerable`, which honors the version ranges in each CVE). CVEs in CISA's Known Exploited Vulnerabilities catalog are marked and listed first.
+
+Curated apps: Firefox, Chrome, 7-Zip, VLC, Notepad++, Wireshark, WinRAR, Git, Python 3, Node.js, PuTTY, VS Code, WinSCP, KeePass. Matching arbitrary Windows software to NVD products is unreliable (names and version formats differ), so other apps get the update check only. To add one, append its winget Id, NVD `vendor:product`, and the number of version components NVD uses to `CURATED` in `software.py`.
+
+The NVD allows 5 requests per 30 s without an API key, so each curated app takes about 7 s. With a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) in `NVD_API_KEY`, it takes under 1 s.
+
+Example:
+
+```
+Known CVEs for installed versions (NVD, 5 curated apps checked):
+  Git                                          2.55.0.5           none
+  Wireshark                                    4.6.4              103 CVEs  -> update to 4.6.9
+      CVE-2026-5402    HIGH     8.8    https://nvd.nist.gov/vuln/detail/CVE-2026-5402
+      ...
+```

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+  <p class="sub">Scan a host for open ports and flag the risky ones. Only scan machines you own or have permission to test.</p>
+
+  <div class="panel">
+    <form method="post" action="/scan" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Scanning...';">
+      <input type="hidden" name="token" value="{{ token }}">
+      <label>Target (hostname, IP, or CIDR)
+        <input name="target" value="{{ target }}" required>
+      </label>
+      <label>Ports
+        <input name="ports" value="{{ ports }}">
+      </label>
+      <button type="submit">Scan</button>
+    </form>
+  </div>
+
+  {% if error %}
+  <div class="panel error">{{ error }}</div>
+  {% endif %}
+
+  {% if findings is not none %}
+  <div class="panel">
+    {% if findings %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Host</th><th>Port</th><th>State</th><th>Service</th><th>Advice</th></tr></thead>
+        <tbody>
+        {% for f in findings %}
+          <tr class="{{ 'risky' if f.advice }}">
+            <td>{{ f.host }}{% if f.hostname %} <span class="muted">({{ f.hostname }})</span>{% endif %}</td>
+            <td class="num">{{ f.port }}/{{ f.protocol }}</td>
+            <td class="state-{{ f.state }}">{{ f.state }}</td>
+            <td>{{ f.service }}</td>
+            <td class="advice">{{ f.advice or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">{{ target }} is up; no open or filtered ports found.</p>
+    {% endif %}
+  </div>
+
+  {% if sources %}
+  <div class="panel">
+    <strong>Sources</strong>
+    <ul class="sources">
+      {% for s in sources %}<li>{{ s | linkify }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  {% endif %}
+{% endblock %}
