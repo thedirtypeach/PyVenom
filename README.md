@@ -84,6 +84,34 @@ python -m unittest
 
 Tests cover result parsing, input validation, the advice table, and the web UI (including the token, Host, and escaping checks); they do not need nmap or a network.
 
+## Software audit (Windows)
+
+```powershell
+Install-Module Microsoft.WinGet.Client -Scope CurrentUser    # once
+python software.py              # updates + known CVEs
+python software.py --no-cve     # updates only (a few seconds)
+python software.py --json       # machine-readable output
+```
+
+Two checks:
+
+1. **Updates:** every installed app that winget has a newer version of, via Microsoft's WinGet PowerShell module. `winget upgrade --all` installs them.
+2. **Known CVEs:** for a curated list of common apps, the NVD is asked which CVEs cover the installed version (`cpeName` + `isVulnerable`, which honors the version ranges in each CVE). CVEs in CISA's Known Exploited Vulnerabilities catalog are marked and listed first.
+
+Curated apps: Firefox, Chrome, 7-Zip, VLC, Notepad++, Wireshark, WinRAR, Git, Python 3, Node.js, PuTTY, VS Code, WinSCP, KeePass. Matching arbitrary Windows software to NVD products is unreliable (names and version formats differ), so other apps get the update check only. To add one, append its winget Id, NVD `vendor:product`, and the number of version components NVD uses to `CURATED` in `software.py`.
+
+The NVD allows 5 requests per 30 s without an API key, so each curated app takes about 7 s. With a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) in `NVD_API_KEY`, it takes under 1 s.
+
+Example:
+
+```
+Known CVEs for installed versions (NVD, 5 curated apps checked):
+  Git                                          2.55.0.5           none
+  Wireshark                                    4.6.4              103 CVEs  -> update to 4.6.9
+      CVE-2026-5402    HIGH     8.8    https://nvd.nist.gov/vuln/detail/CVE-2026-5402
+      ...
+```
+
 ## Roadmap
 
-- Inventory installed software and versions on Windows and compare against known-vulnerable versions.
+- Software audit in the web UI.
