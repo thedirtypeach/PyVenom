@@ -7,10 +7,20 @@ network reach it by, so the result is what the local network can see.
 
 import argparse
 import json
+import re
 import socket
 import sys
 
 import nmap
+
+# python-nmap shlex-splits the target into nmap's argv, so a target like "-iL file" or
+# "x --script y" would become nmap options. Allow only one host, IP, or CIDR range.
+TARGET_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9.:/-]{0,252}")
+PORTS_RE = re.compile(r"[0-9][0-9,-]{0,199}")
+
+
+class ScanError(Exception):
+    pass
 
 # Ports 1-1024 plus common services that live above them.
 DEFAULT_PORTS = "1-1024,3306,3389,5900,8080,8443"
@@ -73,6 +83,31 @@ def parse_results(scan_result):
     return findings
 
 
+def run_scan(target, ports=DEFAULT_PORTS):
+    '''Scan target and return findings. Raises ScanError with a user-facing message.'''
+    if not TARGET_RE.fullmatch(target):
+        raise ScanError(f"Invalid target {target!r}: use one hostname, IP address, or CIDR range.")
+    if not PORTS_RE.fullmatch(ports):
+        raise ScanError(f"Invalid ports {ports!r}: use numbers, commas, and ranges, e.g. 22,80,8000-8100.")
+    try:
+        result = nmap.PortScanner().scan(target, ports)
+    except nmap.PortScannerError as e:
+        if "not found" in str(e):
+            raise ScanError("nmap is not installed or not on PATH: https://nmap.org/download") from e
+        raise ScanError(f"nmap failed: {e}") from e
+    if not result.get("scan"):
+        # nmap reports a host it cannot resolve or reach as zero hosts up, not as an error.
+        # python-nmap repeats nmap's stderr per error, so keep each line once.
+        stderr = "\n".join(result.get("nmap", {}).get("scaninfo", {}).get("error", []))
+        lines = dict.fromkeys(l.strip() for l in stderr.splitlines() if l.strip())
+        raise ScanError("\n".join([f"{target} could not be resolved or did not respond.", *lines]))
+    return parse_results(result)
+
+
+def cited_sources(findings):
+    return sorted({f["source"] for f in findings if f["source"]})
+
+
 def print_report(target, findings):
     print(f"Target: {target}")
     if not findings:
@@ -81,7 +116,7 @@ def print_report(target, findings):
     print(f"{'PORT':<10}{'STATE':<10}{'SERVICE':<14}ADVICE")
     for f in findings:
         print(f"{f['port']:>5}/{f['protocol']:<4}{f['state']:<10}{f['service']:<14}{f['advice'] or ''}")
-    sources = sorted({f["source"] for f in findings if f["source"]})
+    sources = cited_sources(findings)
     if sources:
         print("\nSources:")
         for s in sources:
@@ -99,19 +134,10 @@ def main(argv=None):
     if not args.json:
         print(f"Scanning {target} (ports {args.ports})...")
     try:
-        result = nmap.PortScanner().scan(target, args.ports)
-    except nmap.PortScannerError as e:
-        if "not found" in str(e):
-            sys.exit("nmap is not installed or not on PATH: https://nmap.org/download")
-        sys.exit(f"nmap failed: {e}")
-    if not result.get("scan"):
-        # nmap reports a host it cannot resolve or reach as zero hosts up, not as an error.
-        # python-nmap repeats nmap's stderr per error, so keep each line once.
-        stderr = "\n".join(result.get("nmap", {}).get("scaninfo", {}).get("error", []))
-        lines = dict.fromkeys(l.strip() for l in stderr.splitlines() if l.strip())
-        sys.exit("\n".join([f"{target} could not be resolved or did not respond.", *lines]))
+        findings = run_scan(target, args.ports)
+    except ScanError as e:
+        sys.exit(str(e))
 
-    findings = parse_results(result)
     if args.json:
         print(json.dumps({"target": target, "findings": findings}, indent=2))
     else:

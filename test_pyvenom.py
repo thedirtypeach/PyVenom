@@ -1,5 +1,6 @@
 import ipaddress
 import unittest
+from unittest import mock
 
 import pyvenom
 
@@ -51,6 +52,26 @@ class Advice(unittest.TestCase):
         for port, (advice, source) in pyvenom.ADVICE.items():
             self.assertTrue(advice, port)
             self.assertIn("https://", source, port)
+
+
+class Validation(unittest.TestCase):
+    def test_rejects_anything_nmap_would_read_as_options(self):
+        for target in ("-iL hosts.txt", "10.0.0.1 --script vuln", "-oN out.txt", "a;b", ""):
+            with self.subTest(target=target), mock.patch("nmap.PortScanner") as scanner:
+                with self.assertRaisesRegex(pyvenom.ScanError, "Invalid target"):
+                    pyvenom.run_scan(target, "80")
+                scanner.assert_not_called()
+
+    def test_rejects_bad_ports(self):
+        for ports in ("-sV", "80 --script x", "abc", ""):
+            with self.subTest(ports=ports), self.assertRaisesRegex(pyvenom.ScanError, "Invalid ports"):
+                pyvenom.run_scan("10.0.0.1", ports)
+
+    def test_accepts_normal_targets_and_ports(self):
+        for target in ("10.0.0.1", "192.168.1.0/24", "scanme.nmap.org", "fe80::1", "host-01"):
+            self.assertTrue(pyvenom.TARGET_RE.fullmatch(target), target)
+        for ports in ("80", "22,80,443", "1-1024,3389", pyvenom.DEFAULT_PORTS):
+            self.assertTrue(pyvenom.PORTS_RE.fullmatch(ports), ports)
 
 
 class LocalIp(unittest.TestCase):

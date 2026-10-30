@@ -48,7 +48,19 @@ Sources:
 
 `--json` prints `{"target": ..., "findings": [...]}`; each finding has `host`, `hostname`, `protocol`, `port`, `state`, `service`, `advice`, `source`.
 
-Exit code is 1 when nmap is missing or the target cannot be resolved or reached.
+Exit code is 1 when nmap is missing, the target or ports are invalid, or the target cannot be resolved or reached.
+
+Targets must be a single hostname, IP address, or CIDR range, and ports only digits, commas, and ranges. This keeps input from being passed to nmap as extra options.
+
+## Web UI
+
+```powershell
+python app.py
+```
+
+Open http://127.0.0.1:5000, enter a target and ports, press Scan. Results show in a table with risky ports highlighted and their sources linked. A scan of the default ports takes about 15 seconds.
+
+The server listens on `127.0.0.1` only and is not reachable from other devices. Requests with a foreign `Host` header and scans without the page's per-run token are refused, so other websites open in your browser cannot trigger scans.
 
 ## Advice
 
@@ -70,7 +82,7 @@ Other open ports (e.g. 135 RPC, 139 NetBIOS, 3389 RDP) are listed without advice
 python -m unittest
 ```
 
-Tests cover result parsing and the advice table; they do not need nmap or a network.
+Tests cover result parsing, input validation, the advice table, and the web UI (including the token, Host, and escaping checks); they do not need nmap or a network.
 
 ## Roadmap
 
