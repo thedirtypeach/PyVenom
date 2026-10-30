@@ -11,7 +11,7 @@ SAMPLE = {
             "status": {"state": "up"},
             "tcp": {
                 445: {"state": "open", "name": "microsoft-ds"},
-                135: {"state": "open", "name": "msrpc"},
+                8080: {"state": "open", "name": "http-proxy"},
                 21: {"state": "filtered", "name": "ftp"},
             },
         }
@@ -24,10 +24,10 @@ class ParseResults(unittest.TestCase):
         self.findings = pyvenom.parse_results(SAMPLE)
 
     def test_one_finding_per_port_sorted(self):
-        self.assertEqual([f["port"] for f in self.findings], [21, 135, 445])
+        self.assertEqual([f["port"] for f in self.findings], [21, 445, 8080])
 
     def test_fields(self):
-        smb = self.findings[2]
+        smb = self.findings[1]
         self.assertEqual(smb["host"], "10.0.0.5")
         self.assertEqual(smb["hostname"], "desktop")
         self.assertEqual(smb["protocol"], "tcp")
@@ -38,7 +38,7 @@ class ParseResults(unittest.TestCase):
         by_port = {f["port"]: f for f in self.findings}
         self.assertIn("445", by_port[445]["advice"])
         self.assertIsNotNone(by_port[445]["source"])
-        self.assertIsNone(by_port[135]["advice"])  # open, but no verified source
+        self.assertIsNone(by_port[8080]["advice"])  # open, but no verified source
         self.assertIsNone(by_port[21]["advice"])   # has advice, but filtered, not open
 
     def test_empty_scan(self):

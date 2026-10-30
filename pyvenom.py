@@ -17,20 +17,30 @@ DEFAULT_PORTS = "1-1024,3306,3389,5900,8080,8443"
 
 # Advice for risky open ports. Each entry cites the primary source it rests on;
 # ports without a verified source are reported without advice.
+MS03_026 = ("Microsoft Security Bulletin MS03-026, Technical details (Mitigating factors, Workarounds): "
+            "https://learn.microsoft.com/en-us/security-updates/securitybulletins/2003/ms03-026")
 ADVICE = {
     21: ("FTP sends passwords and data unencrypted. Use SFTP/FTPS or disable the FTP server.",
          "RFC 2577, FTP Security Considerations, sections 5-6: https://www.rfc-editor.org/rfc/rfc2577"),
     23: ("Telnet predates SSH and offers far weaker security. Use SSH and disable Telnet.",
          "RFC 4251, SSH Protocol Architecture, section 4.1: https://www.rfc-editor.org/rfc/rfc4251"),
+    135: ("MS-RPC endpoint mapper. RPC is not meant for hostile networks like the internet; "
+          "block TCP 135 inbound from the internet at the firewall.", MS03_026),
+    139: ("NetBIOS session service. Block TCP 139 inbound from the internet at the firewall.", MS03_026),
     445: ("SMB. Block TCP 445 inbound from the internet, and make sure SMBv1 is disabled "
           "(Set-SmbServerConfiguration -EnableSMB1Protocol $false).",
           "Microsoft Learn, Secure SMB Traffic in Windows Server (Block inbound SMB access): "
           "https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-secure-traffic ; "
           "Detect, enable, and disable SMBv1, SMBv2, and SMBv3 in Windows: "
           "https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/detect-enable-and-disable-smbv1-v2-v3"),
+    593: ("RPC over HTTP endpoint mapper. Block TCP 593 inbound from the internet at the firewall.", MS03_026),
     3306: ("MySQL should not be reachable from untrusted hosts. Firewall it or bind it to localhost.",
            "MySQL 8.4 Reference Manual, 8.1.1 Security Guidelines: "
            "https://dev.mysql.com/doc/refman/8.4/en/security-guidelines.html"),
+    3389: ("RDP. Do not expose it directly to the internet; Microsoft calls that a security risk.",
+           "Microsoft Learn, Troubleshoot RDP blocked by NSG rules on Azure VMs (Secure RDP access for "
+           "production environments): https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/"
+           "windows/troubleshoot-rdp-nsg-problem"),
     5900: ("VNC's built-in authentication is cryptographically weak. Tunnel VNC over SSH or a VPN.",
            "RFC 6143, Remote Framebuffer Protocol, section 7.2.2: https://www.rfc-editor.org/rfc/rfc6143"),
 }
